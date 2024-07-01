@@ -1,53 +1,85 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const fs = require('fs').promises; // Use fs.promises for async file operations
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const fs = require("fs").promises; // Use fs.promises for async file operations
 
 const app = express();
 app.use(bodyParser.json());
 app.use(cors());
+app.use(express.json());
 
 const port = 3000;
-const filepath = './data.json';
+const filepath = "./data.json";
 
-app.post('/postValue', async (req, res) => {
-    const { value } = req.body;
-    console.log('Value: ', value);
+app.post("/postValue", async (req, res) => {
+  const { value } = req.body;
+  console.log("Value: ", value);
 
+  try {
+    // Step 1: Read the existing data
+    let existingData;
     try {
-        // Step 1: Read the existing data
-        let existingData;
-        try {
-            existingData = JSON.parse(await fs.readFile(filepath, 'utf8'));
-        } catch (err) {
-            // If the file does not exist or is empty, start with an empty object
-            existingData = {};
-        }
-
-        // Step 2: Append the new data
-        existingData.value = value; // This will overwrite the same key. If you want to keep multiple values, consider using an array or a more complex object structure.
-
-        // Step 3: Write the updated data back to the file
-        const content = JSON.stringify(existingData, null, 2);
-        await fs.writeFile(filepath, content, 'utf8');
-        res.status(200).send({message: 'Data saved successfully'});
+      existingData = JSON.parse(await fs.readFile(filepath, "utf8"));
     } catch (err) {
-        console.log('Error processing the file: ', err);
-        res.status(500).send({message: 'Fail to save data'});
+      // If the file does not exist or is empty, start with an empty object
+      existingData = {};
     }
+
+    // Step 2: Append the new data
+    existingData.value = value; // This will overwrite the same key. If you want to keep multiple values, consider using an array or a more complex object structure.
+
+    // Step 3: Write the updated data back to the file
+    const content = JSON.stringify(existingData, null, 2);
+    await fs.writeFile(filepath, content, "utf8");
+    res.status(200).send({ message: "Data saved successfully" });
+  } catch (err) {
+    console.log("Error processing the file: ", err);
+    res.status(500).send({ message: "Fail to save data" });
+  }
 });
 
+app.post("/postTarget", async (req, res) => {
+  let { target } = req.body;
+  console.log("Target: ", target); // Corrected variable name in log
 
-app.get('/getData', async (req, res) => {
+  target = parseInt(target, 10);
+  if (isNaN(target)) {
+    return res.status(400).send({ message: "Invalid target value" });
+  }
+
+  try {
+    // Step 1: Read the existing data
+    let existingData;
     try {
-        const data = await fs.readFile(filepath, 'utf8');
-        res.status(200).send(JSON.parse(data));
+      existingData = JSON.parse(await fs.readFile(filepath, "utf8"));
     } catch (err) {
-        console.log('Error reading the file: ',err);
-        res.status(500).send({message: 'Fail to read data'});
+      // If the file does not exist or is empty, start with an empty object
+      existingData = {};
     }
+
+    // Step 2: Append the new data
+    existingData.target = target; // Corrected variable name here
+
+    // Step 3: Write the updated data back to the file
+    const content = JSON.stringify(existingData, null, 2);
+    await fs.writeFile(filepath, content, "utf8");
+    res.status(200).send({ message: "Data saved successfully" });
+  } catch (err) {
+    console.log("Error processing the file: ", err);
+    res.status(500).send({ message: "Fail to save data" });
+  }
+});
+
+app.get("/getData", async (req, res) => {
+  try {
+    const data = await fs.readFile(filepath, "utf8");
+    res.status(200).send(JSON.parse(data));
+  } catch (err) {
+    console.log("Error reading the file: ", err);
+    res.status(500).send({ message: "Fail to read data" });
+  }
 });
 
 app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+  console.log(`Server running on port ${port}`);
 });
